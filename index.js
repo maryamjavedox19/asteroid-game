@@ -23,9 +23,11 @@ class Player {
         c.translate(this.position.x, this.position.y);    //we are bringing canvas to the center so player movoes accordingly
         c.rotate(this.rotation);                //we are rotating the whole canvas
         c.translate(-this.position.x, -this.position.y);   //canvas back to original position
+        c.beginPath()
         c.arc(this.position.x, this.position.y, 5, 0, Math.PI * 2, false)  //arc is a way to draw a circle
         c.fillStyle = 'red'
         c.fill()
+        c.closePath()
         //                                  radius, begin angle of arc, ending angle, complete circle
       // c.fillStyle = 'red'
       // c.fillRect(this.position.x, this.position.y, 100, 100)
@@ -74,6 +76,32 @@ class Projectile {
     }
   }
 
+//   -----------------------------asteroid class---------------------------------------------
+
+
+  class Asteroid {
+    constructor({ position, velocity, radius }) {
+      this.position = position
+      this.velocity = velocity
+      this.radius = radius    //between 10 and 60
+    }
+  
+    draw() {
+      c.beginPath()
+      c.arc(this.position.x, this.position.y, this.radius, 0, Math.PI * 2, false)
+      c.closePath()
+      c.strokeStyle = 'white'
+      c.stroke()
+    }
+  
+    update() {
+      this.draw()
+      this.position.x += this.velocity.x
+      this.position.y += this.velocity.y
+    }
+  }
+  
+
 // ---------------------------------------------------------------------------------------------------  
 
 const player = new Player({
@@ -104,6 +132,57 @@ const player = new Player({
   const projectiles = []
   const asteroids = []
 
+  window.setInterval(() => {
+    const index = Math.floor(Math.random() * 4)
+    let x, y
+    let vx, vy
+    let radius = 50 * Math.random() + 10
+  
+    switch (index) {
+      case 0: // left side of the screen
+        x = 0 - radius
+        y = Math.random() * canvas.height
+        vx = 1
+        vy = 0
+        break
+      case 1: // bottom side of the screen
+        x = Math.random() * canvas.width
+        y = canvas.height + radius
+        vx = 0
+        vy = -1
+        break
+      case 2: // right side of the screen
+        x = canvas.width + radius
+        y = Math.random() * canvas.height
+        vx = -1
+        vy = 0
+        break
+      case 3: // top side of the screen
+        x = Math.random() * canvas.width
+        y = 0 - radius
+        vx = 0
+        vy = 1
+        break
+    }
+
+    asteroids.push(
+        new Asteroid({
+            position:{
+                x:x,
+                y:y
+            },
+
+            velocity:{
+                x:vx,
+                y:vy
+            },
+
+            radius,
+
+        })
+    )
+  }, 3000)  
+
 
   function animate() {
     const animationId = window.requestAnimationFrame(animate)  //we are calling animate again and again
@@ -116,15 +195,35 @@ const player = new Player({
         const projectile = projectiles[i]
         projectile.update()
 
+
+        //garbage collection for asteroid
         if (
-            projectile.position.x + projectile.radius < 0 ||
-            projectile.position.x - projectile.radius > canvas.width ||
-            projectile.position.y - projectile.radius > canvas.height ||
-            projectile.position.y + projectile.radius < 0
+            asteroid.position.x + asteroid.radius < 0 ||
+            asteroid.position.x - asteroid.radius > canvas.width ||
+            asteroid.position.y - asteroid.radius > canvas.height ||
+            asteroid.position.y + asteroid.radius < 0
           ) {
-            projectiles.splice(i, 1)
+            asteroids.splice(i, 1)
           }
+      
     }
+
+
+    // asteroid management
+  for (let i = asteroids.length - 1; i >= 0; i--) {
+    const asteroid = asteroids[i]
+    asteroid.update()
+
+      //garbage collection for projectile
+      if (
+        projectile.position.x + projectile.radius < 0 ||
+        projectile.position.x - projectile.radius > canvas.width ||
+        projectile.position.y - projectile.radius > canvas.height ||
+        projectile.position.y + projectile.radius < 0
+      ) {
+        projectiles.splice(i, 1)
+      }
+  }
 
 
     if (keys.w.pressed) {
